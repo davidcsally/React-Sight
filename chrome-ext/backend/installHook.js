@@ -1,10 +1,11 @@
 //  Created by Grant Kang, William He, and David Sally on 9/10/17.
 //  Copyright © 2017 React Sight. All rights reserved.
 
-/* eslint brace-style: off, camelcase: off, max-len: off, no-prototype-builtins: off, no-restricted-syntax: off, consistent-return: off, no-inner-declarations: off */
+/* eslint brace-style: off, camelcase: off, max-len: off, no-prototype-builtins: off, no-restricted-syntax: off, consistent-return: off, no-var: off */
 
 // Notes... might need additional testing..renderers provides a list of all imported React instances
 var __ReactSightHasRun; // memoize installing the hook
+var __ReactSightDebugMode = false;
 
 if (!__ReactSightHasRun) {
   if (!window.__REACT_DEVTOOLS_GLOBAL_HOOK__) console.warn('[React-Sight]: React Sight requires React Dev Tools to be installed.');
@@ -34,17 +35,17 @@ if (!__ReactSightHasRun) {
   (function installHook() {
     // no instance of React detected
     if (!window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
-      console.log('Error: React DevTools not present. React Sight uses React DevTools to patch React\'s reconciler');
+      if (__ReactSightDebugMode) console.warn('[React-Sight] Error: React DevTools not present. React Sight uses React DevTools to patch React\'s reconciler');
       return;
     }
     // React fiber (16+)
     if (instance && instance.version) {
       __ReactSight_ReactVersion = instance.version;
-      // console.log('version: ', __ReactSight_ReactVersion);
+      if (__ReactSightDebugMode) console.log('version: ', __ReactSight_ReactVersion);
       devTools.onCommitFiberRoot = (function (original) {
         return function (...args) {
           __ReactSightFiberDOM = args[1];
-          // console.log('DOM: ', __ReactSightFiberDOM);
+          if (__ReactSightDebugMode) console.log('DOM: ', __ReactSightFiberDOM);
           traverse16();
           return original(...args);
         };
@@ -66,11 +67,30 @@ if (!__ReactSightHasRun) {
         };
       })(instance.Reconciler.receiveComponent);
     }
-    else {
-      console.log('[React Sight] React not found');
-    }
+    else console.log('[React Sight] React not found');
   })();
   /* eslint-enable */
+
+  /**
+   * Strips name of function from component props
+   *
+   * @param {func} fn - function
+   * @returns {string} function's name
+   */
+  const parseFunction = (fn) => {
+    const string = `${fn}`;
+
+    const match = string.match(/function/);
+    if (match == null) return 'fn()';
+
+    const firstIndex = match[0] ? string.indexOf(match[0]) + match[0].length + 1 : null;
+    if (firstIndex == null) return 'fn()';
+
+    const lastIndex = string.indexOf('(');
+    const fnName = string.slice(firstIndex, lastIndex);
+    if (!fnName.length) return 'fn()';
+    return `${fnName} ()`;
+  };
 
   /**
    * Parse Component's props. Handle nested objects and functions
@@ -93,34 +113,29 @@ if (!__ReactSightHasRun) {
 
     else {
       const parsedProps = {};
-      // TODO remove for in loop
-      for (let key in props) {
-        if (!props[key]) parsedProps[key] === null;
+      const keys = Object.keys(props);
+      keys.forEach((key) => {
         // stringify methods
-        else if (key === 'routes') return;
-        else if (typeof props[key] === 'function') {
-          parsedProps[key] = parseFunction(props[key]);
-        }
+        if (typeof props[key] === 'function') parsedProps[key] = parseFunction(props[key]);
+        // parseProps forEach element
         else if (Array.isArray(props[key]) && key === 'children') {
-          // parseProps forEach element
           parsedProps[key] = [];
           props[key].forEach((child) => {
             parsedProps[key].push(parseProps(child));
           });
-        } else if (typeof props[key] === 'object') {
-          // handle custom objects and components with one child
+        }
+        // handle custom objects and components with one child
+        else if (typeof props[key] === 'object') {
           if (props[key] && Object.keys(props[key]).length) {
-            if (i < 3) { // limit this func
+            if (i < 3) { // limit how often this func can run -> was getting stuck in infinite loops
               const iterator = i + 1;
               parsedProps[key] = parseProps(props[key], iterator);
             } else parsedProps[key] = 'obj*'; // end recursion so we dont get infinite loops
           }
         }
-        else {
-          // handle text nodes and other random values
-          parsedProps[key] = props[key];
-        }
-      }
+        // handle text nodes and other random values
+        else parsedProps[key] = props[key];
+      });
       return parsedProps;
     }
   };
@@ -144,9 +159,7 @@ if (!__ReactSightHasRun) {
       key: null,
     };
     // get ID
-    if (component._debugID) {
-      newComponent.id = component._debugID;
-    }
+    if (component._debugID) newComponent.id = component._debugID;
     if (component._domID) {
       newComponent.id = component._domID;
       newComponent.isDOM = true;
@@ -165,12 +178,8 @@ if (!__ReactSightHasRun) {
     else newComponent.name = 'default';
 
     // call getState() on react-redux.connect()
-    if (component._currentElement.type) {
-      if (component._currentElement.type.propTypes) {
-        if (component._currentElement.type.propTypes.hasOwnProperty('store')) {
-          __ReactSightStore = component._instance.store.getState();
-        }
-      }
+    if (component._currentElement && component._currentElement.type && component._currentElement.type.propTypes && component._currentElement.type.propTypes.hasOwnProperty('store')) {
+      __ReactSightStore = component._instance.store.getState();
     }
 
     // Get State
@@ -187,6 +196,8 @@ if (!__ReactSightHasRun) {
     if (!newComponent.key && component._currentElement && component._currentElement.key) {
       newComponent.key = component._currentElement.key;
     }
+
+    // Get component ref
     if (!newComponent.ref && component._currentElement && component._currentElement.ref) {
       newComponent.ref = component._currentElement.ref;
     }
@@ -196,9 +207,7 @@ if (!__ReactSightHasRun) {
     parentArr.push(newComponent);
     if (componentChildren) {
       const keys = Object.keys(componentChildren);
-      keys.forEach((key) => {
-        traverseAllChildren(componentChildren[key], newComponent.children);
-      });
+      keys.forEach(key => traverseAllChildren(componentChildren[key], newComponent.children));
     }
     else if (component._renderedComponent) {
       traverseAllChildren(component._renderedComponent, newComponent.children);
@@ -218,38 +227,15 @@ if (!__ReactSightHasRun) {
     traverseAllChildren(rootElement, components);
     const data = { data: components, store: __ReactSightStore };
 
-    // console.log('SENDING -> ', data);
+    if (__ReactSightDebugMode) console.log('SENDING -> ', data);
     window.postMessage(JSON.parse(JSON.stringify(data)), '*');
-  };
-
-
-  /**
-   * Strips name of function from component props
-   *
-   * @param {func} fn - function
-   * @returns {string} function's name
-   */
-  const parseFunction = (fn) => {
-    const string = `${fn}`;
-
-    const match = string.match(/function/);
-    if (match == null) return 'fn()';
-
-    const firstIndex = match[0] ? string.indexOf(match[0]) + match[0].length + 1 : null;
-    if (firstIndex == null) return 'fn()';
-
-    const lastIndex = string.indexOf('(');
-    const fnName = string.slice(firstIndex, lastIndex);
-    if (!fnName.length) return 'fn()';
-    return `${fnName} ()`;
   };
 
   /** TODO - get objects to work
    *
    * Parse the props for React 16 components
    */
-  function props16(node) {
-    // console.log('props16');
+  const props16 = (node) => {
     const props = {};
     const keys = Object.keys(node.memoizedProps);
 
@@ -259,7 +245,6 @@ if (!__ReactSightHasRun) {
       }
       // TODO - get these objects to work, almost always children property
       else if (typeof node.memoizedProps[prop] === 'object') {
-        // console.log("PROP Object: ", node.memoizedProps[prop]);
         props[prop] = 'object*';
 
         // TODO - parse object
@@ -285,14 +270,14 @@ if (!__ReactSightHasRun) {
       else props[prop] = node.memoizedProps[prop];
     });
     return props;
-  }
+  };
 
   /** TODO: Get Props
    *
    * Traverse through vDOM (React 16) and build up JSON data
    *
    */
-  function recur16(node, parentArr) {
+  const recur16 = (node, parentArr) => {
     const newComponent = {
       name: '',
       children: [],
@@ -325,16 +310,13 @@ if (!__ReactSightHasRun) {
     if (node.memoizedProps) newComponent.props = props16(node);
 
     // get store
-    if (node.type && node.type.propTypes) {
-      if (node.type.propTypes.hasOwnProperty('store')) {
-        __ReactSightStore = node.stateNode.store.getState();
-      }
-    }
+    if (node.type && node.type.propTypes && node.type.propTypes.hasOwnProperty('store')) __ReactSightStore = node.stateNode.store.getState();
+
     newComponent.children = [];
     parentArr.push(newComponent);
     if (node.child != null) recur16(node.child, newComponent.children);
     if (node.sibling != null) recur16(node.sibling, parentArr);
-  }
+  };
 
   /**
    * Traversal Method for React 16
@@ -347,19 +329,18 @@ if (!__ReactSightHasRun) {
    * @param {array} components - array containing parsed virtual DOM
    *
    */
-  function traverse16(components = []) {
-    if (typeof __ReactSightFiberDOM === 'undefined') return;
-    // console.log('[ReactSight]traverse16 vDOM: ', __ReactSightFiberDOM);
+  const traverse16 = (components = []) => {
+    if (!__ReactSightFiberDOM) console.log('[ReactSight] virtual DOM not found, try triggering a setState()');
+    if (__ReactSightDebugMode) console.log('[ReactSight] traverse16 vDOM: ', __ReactSightFiberDOM);
     recur16(__ReactSightFiberDOM.current.stateNode.current, components);
     const data = {
       data: components,
       store: __ReactSightStore,
     };
     data.data = data.data[0].children[0].children;
-    // console.log('[ReactSight] retrieved data --> posting to content-scripts...: ', data)
-    // console.log('[ReactSight] SENDING -> ', data);
+    if (__ReactSightDebugMode) console.log('[ReactSight] SENDING -> ', data);
     window.postMessage(JSON.parse(JSON.stringify(data)), '*');
-  }
+  };
 
   // listener for initial load
   if (instance) {
