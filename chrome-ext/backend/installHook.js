@@ -4,7 +4,7 @@
 /* eslint brace-style: off, camelcase: off, max-len: off, no-prototype-builtins: off, no-restricted-syntax: off, consistent-return: off, no-var: off */
 // Notes... might need additional testing..renderers provides a list of all imported React instances
 var __ReactSightHasRun; // memoize installing the hook
-var __ReactSightDebugMode = true;
+var __ReactSightDebugMode = true; // TODO change this to a node env param
 
 if (!__ReactSightHasRun) {
   if (!window.__REACT_DEVTOOLS_GLOBAL_HOOK__) console.warn('[React-Sight]: React Sight requires React Dev Tools to be installed.');
