@@ -31,4 +31,17 @@ chrome.extension.onMessage.addListener(() => {
   listener is currently emitting anytime a new tab is open */
 });
 
-injectScript(chrome.extension.getURL('/backend/installHook.js'), 'body');
+injectScript(chrome.extension.getURL('/build/installHook.js'), 'body');
+
+// NOTES - testing for messages from react dev tools, should we hook into that instead?
+// Listening for events emitted from user's application *window.postMessage()*
+// window.addEventListener('message', (e) => {
+//   console.log('message', e);
+//   if (e.source !== window) return;
+//   // send message to background
+//   chrome.extension.sendMessage(e.data, () => {
+//     if (typeof e.data === 'object') {
+//       // console.log('**Content-scripts** received data sending to devtools...', e.data);
+//     }
+//   });
+// });
