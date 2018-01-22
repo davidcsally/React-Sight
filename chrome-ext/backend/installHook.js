@@ -2,10 +2,9 @@
 //  Copyright © 2017 React Sight. All rights reserved.
 
 /* eslint brace-style: off, camelcase: off, max-len: off, no-prototype-builtins: off, no-restricted-syntax: off, consistent-return: off, no-var: off */
-
 // Notes... might need additional testing..renderers provides a list of all imported React instances
 var __ReactSightHasRun; // memoize installing the hook
-var __ReactSightDebugMode = false;
+var __ReactSightDebugMode = true;
 
 if (!__ReactSightHasRun) {
   if (!window.__REACT_DEVTOOLS_GLOBAL_HOOK__) console.warn('[React-Sight]: React Sight requires React Dev Tools to be installed.');
@@ -70,6 +69,8 @@ if (!__ReactSightHasRun) {
     else console.log('[React Sight] React not found');
   })();
   /* eslint-enable */
+
+  if (__ReactSightDebugMode) console.log('[React-Sight installed]]: ');
 
   /**
    * Strips name of function from component props
@@ -226,9 +227,9 @@ if (!__ReactSightHasRun) {
     // recursively traverse down through props chain   starting from root element
     traverseAllChildren(rootElement, components);
     const data = { data: components, store: __ReactSightStore };
-
-    if (__ReactSightDebugMode) console.log('SENDING -> ', data);
-    window.postMessage(JSON.parse(JSON.stringify(data)), '*');
+    const clone = JSON.parse(JSON.stringify(data));
+    if (__ReactSightDebugMode) console.log('SENDING -> ', clone);
+    window.postMessage(clone, '*');
   };
 
   /** TODO - get objects to work
