@@ -1,5 +1,5 @@
 {
-  "name": "React-Sight",
+  "name": "react-sight",
   "version": "1.0.5",
   "description": "Visualization tool for React Applications",
   "keywords": [
@@ -17,6 +17,7 @@
     "test": "NODE_PATH=. node_modules/.bin/jest",
     "coveralls": "NODE_PATH=. node_modules/.bin/jest && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "start": "npm-run-all -p webpack",
+    "start:dev": "NODE_PATH=. NODE_ENV=development && webpack-dev-server --content-base chrome-ext/build",
     "build": "webpack -p"
   },
   "repository": "git+https://github.com/React-Sight/React-Sight.git",
@@ -26,6 +27,10 @@
     "url": "https://github.com/React-Sight/React-Sight/issues"
   },
   "homepage": "https://github.com/React-Sight/React-Sight#readme",
+  "dependencies": {
+    "d3": "^4.10.2",
+    "json-formatter-js": "^2.2.0"
+  },
   "devDependencies": {
     "babel": "^6.23.0",
     "babel-cli": "^6.26.0",
@@ -41,12 +46,13 @@
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-jsx-a11y": "^6.0.2",
     "eslint-plugin-react": "^7.4.0",
+    "html-webpack-plugin": "^2.30.1",
     "jest": "^22.0.4",
+    "node-sass": "^4.7.2",
     "npm-run-all": "^4.1.1",
-    "webpack": "^3.6.0"
-  },
-  "dependencies": {
-    "d3": "^4.10.2",
-    "json-formatter-js": "^2.2.0"
+    "sass-loader": "^6.0.6",
+    "style-loader": "^0.19.1",
+    "webpack": "^3.6.0",
+    "webpack-dev-server": "^2.11.1"
   }
 }
