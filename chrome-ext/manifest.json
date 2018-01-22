@@ -23,6 +23,6 @@
     "file:///*"
   ],
   "web_accessible_resources": [
-    "/build/installHook.js"
+    "/backend/installHook.js"
   ]
 }
