@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/React-Sight/React-Sight#readme",
   "dependencies": {
-    "d3": "^4.12.2",
+    "d3": "^5.15.0",
     "json-formatter-js": "^2.2.0"
   },
   "devDependencies": {
