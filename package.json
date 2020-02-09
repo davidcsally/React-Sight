@@ -52,7 +52,7 @@
     "jest": "^22.1.4",
     "node-sass": "^4.7.2",
     "npm-run-all": "^4.1.1",
-    "sass-loader": "^6.0.6",
+    "sass-loader": "^7.3.1",
     "style-loader": "^0.19.1",
     "webpack": "^3.10.0",
     "webpack-dev-server": "^2.11.1"
